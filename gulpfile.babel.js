@@ -33,6 +33,8 @@ import zip from 'gulp-zip';
 
 // Import theme-specific configurations.
 var config = require('./dev/config/themeConfig.js');
+var themeConfig = config.theme;
+themeConfig.isFirstRun = true;
 
 // Project paths
 const paths = {
@@ -113,7 +115,22 @@ function reload(done) {
 export function php() {
 	config = requireUncached('./dev/config/themeConfig.js');
 
+	let isRebuild = themeConfig.isFirstRun ||
+		( themeConfig.slug !== config.theme.slug ) ||
+		( themeConfig.name !== config.theme.name );
+	if ( isRebuild ) {
+		themeConfig.slug = config.theme.slug;
+        themeConfig.name = config.theme.name;
+	}
+
+	// Reset first run.
+	if ( themeConfig.isFirstRun ) {
+        themeConfig.isFirstRun = false;
+    }
+
 	return gulp.src(paths.php.src)
+	// If not rebuild, then run tasks on changed files only.
+	.pipe(gulpif(!isRebuild, newer(paths.php.dest)))
     // Run PHPCS.
 	.pipe(phpcs({
 		bin: 'vendor/bin/phpcs',
