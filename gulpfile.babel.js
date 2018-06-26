@@ -33,7 +33,6 @@ import zip from 'gulp-zip';
 
 // Import theme-specific configurations.
 var config = require('./dev/config/themeConfig.js');
-var themeSlug = config.theme.slug;
 
 // Project paths
 const paths = {
@@ -109,19 +108,13 @@ function reload(done) {
 
 
 /**
- * PHP via PHP Code Sniffer.
+ * Build the PHP files and run PHP Code Sniffer.
  */
 export function php() {
 	config = requireUncached('./dev/config/themeConfig.js');
-	// Check if theme slug has been updated.
-	let newThemeSlug = false;
-	if ( config.theme.slug !== themeSlug ) {
-		newThemeSlug = true;
-		themeSlug = config.theme.slug;
-	}
+
 	return gulp.src(paths.php.src)
-	// If theme slug has not been updated, run task on changed files only.
-	.pipe(gulpif(!newThemeSlug, newer(paths.php.dest)))
+    // Run PHPCS.
 	.pipe(phpcs({
 		bin: 'vendor/bin/phpcs',
 		standard: 'WordPress',
@@ -129,11 +122,14 @@ export function php() {
 	}))
 	// Log all problems that was found
 	.pipe(phpcs.reporter('log'))
+
+    // Replace the theme's slug and name in the build files.
 	.pipe(replace('wprig', config.theme.slug))
 	.pipe(replace('WP Rig', config.theme.name))
+
+    // Set the build destinations.
 	.pipe(gulp.dest(paths.verbose))
 	.pipe(gulp.dest(paths.php.dest));
-
 }
 
 /**
